@@ -2,6 +2,8 @@ import sounddevice as sd
 import numpy as np
 import sys
 
+from plotter import DoaPlotter
+
 MIC_DIST = 0.06  # m
 C = 343          # sound speed, m/s
 
@@ -31,7 +33,7 @@ def estimate_angle(audio, fs=16000):
 if __name__ == '__main__':
     samplerate = 16000
     channels = 4
-    duration = 5
+    duration = 0.5
 
     if len(sys.argv) < 2:
         print("usage: doa_gcc_phat.py <device number>")
@@ -39,19 +41,24 @@ if __name__ == '__main__':
         print(sd.query_devices())
         sys.exit(1)
 
+    plotter = DoaPlotter()
+    plotter.start()
+
     print("Запись...")
-    audio = sd.rec(
-        int(duration * samplerate),
-        samplerate=samplerate,
-        channels=channels,
-        dtype='float32',
-        device=sys.argv[1]  # device number, sd.query_devices()
-    )
-    sd.wait()
+    while True:
+        audio = sd.rec(
+            int(duration * samplerate),
+            samplerate=samplerate,
+            channels=channels,
+            dtype='float32',
+            device=sys.argv[1]  # device number, sd.query_devices()
+        )
+        sd.wait()
 
-    print(audio.shape)  # (samples, 4)
-    angle = estimate_angle(audio, samplerate)
-    print(angle)
+        print(audio.shape)  # (samples, 4)
+        angle = estimate_angle(audio, samplerate)
+        print(angle)
+        plotter.put(angle)
 
-    for i in range(4):
-        print(f"Mic {i} RMS:", np.sqrt(np.mean(audio[:, i]**2)))
+        for i in range(4):
+            print(f"Mic {i} RMS:", np.sqrt(np.mean(audio[:, i]**2)))

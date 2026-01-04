@@ -34,11 +34,11 @@ class SttServer:
         theta, audio = self.bf.process(indata)
         # print(f"theta={theta}")
 
-        self.audio_queue.put((audio))
+        self.audio_queue.put((theta, audio))
 
     def stt_loop(self):
         while True:
-            data = self.audio_queue.get()
+            theta, data = self.audio_queue.get()
             pcm16 = (data * 32767).astype(np.int16).tobytes()
 
             if self.recognizer.AcceptWaveform(pcm16):
@@ -46,14 +46,16 @@ class SttServer:
                 if result.get("text"):
                     self.broadcast({
                         "type": "final",
-                        "text": result["text"]
+                        "text": result["text"],
+                        "theta": np.rad2deg(theta),
                     })
             else:
                 partial = json.loads(self.recognizer.PartialResult())
                 if partial.get("partial"):
                     self.broadcast({
                         "type": "partial",
-                        "text": partial["partial"]
+                        "text": partial["partial"],
+                        "theta": np.rad2deg(theta),
                     })
 
     async def ws_handler(self, websocket):

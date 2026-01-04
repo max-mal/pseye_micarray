@@ -50,6 +50,13 @@ class Beamformer:
 
         self.bf.far_field_weights(theta)
 
+    def normalize_theta(self, theta):
+        theta_deg = np.rad2deg(theta)
+        if theta_deg > 180:
+            return theta
+
+        return np.deg2rad(90 - theta_deg + 270)
+
     def process(self, audio, steer=None):
         X = audio.T  # -> (channels, samples)
 
@@ -79,6 +86,7 @@ class Beamformer:
             self.doa.locate_sources(X_stft)
             if self.doa.azimuth_recon is not None:
                 theta = self.doa.azimuth_recon[0]
+                theta = self.normalize_theta(theta)
                 if steer is None:
                     self.steer(theta)
 

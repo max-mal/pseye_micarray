@@ -1,13 +1,12 @@
 import numpy as np
 import time
 import matplotlib.pyplot as plt
-import threading
-import queue
+import multiprocessing
 
 
 class DoaPlotter:
     def __init__(self) -> None:
-        self.queue = queue.Queue()
+        self.queue = multiprocessing.Queue()
 
         self.theta_history = []
         self.r_history = []
@@ -50,7 +49,7 @@ class DoaPlotter:
             time.sleep(0.01)
 
     def start(self):
-        threading.Thread(
+        multiprocessing.Process(
             target=self.plot_thread,
             daemon=True
         ).start()

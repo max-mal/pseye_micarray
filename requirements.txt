@@ -1,0 +1,6 @@
+sounddevice
+numpy
+pyroomacoustics
+matplotlib
+vosk
+websockets

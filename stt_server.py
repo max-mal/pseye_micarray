@@ -14,7 +14,7 @@ from beamformer import Beamformer
 class SttServer:
     # MODEL_PATH = "vosk-model-ru-0.42"
     MODEL_PATH = "vosk-model-small-ru-0.22"
-    SAMPLE_RATE = 48000
+    SAMPLE_RATE = 16000
     CHANNELS = 4
     BLOCK_DURATION = 0.5
 

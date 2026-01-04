@@ -22,7 +22,7 @@ if args.device is None and args.file is None:
 
 
 channels = 4
-fs = 48000
+fs = 16000
 block_duration = 0.5
 
 bf = Beamformer(fft_size=512)

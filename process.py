@@ -7,7 +7,7 @@ import soundfile as sf
 import os
 
 
-fs = 48000
+fs = 16000
 channels = 4
 duration = 5
 fft_size = 512

@@ -7,7 +7,7 @@ class Beamformer:
     def __init__(
         self,
         mic_positions=None,
-        fs=48000,
+        fs=16000,
         fft_size=1024,
         mic_count=4,  # PS Eye linear array
         mic_spacing=0.02,
@@ -100,7 +100,7 @@ class Beamformer:
 if __name__ == '__main__':
     import sounddevice as sd
 
-    fs = 48000
+    fs = 16000
     block_duration = 0.1
 
     bf = Beamformer(fs=fs)

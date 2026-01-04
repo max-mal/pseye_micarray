@@ -3,7 +3,7 @@ import numpy as np
 import sys
 import datetime
 
-samplerate = 48000
+samplerate = 16000
 channels = 4
 duration = 5
 

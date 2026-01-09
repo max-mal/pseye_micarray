@@ -11,12 +11,14 @@ class Beamformer:
         fft_size=1024,
         mic_count=4,  # PS Eye linear array
         mic_spacing=0.02,
-        channels_map=[1, 3, 2, 0]
+        channels_map=[1, 3, 2, 0],
+        normalize_forward=True,
     ):
         self.fs = fs
         self.fft_size = fft_size
         self.fft_hop = fft_size // 2
         self.current_theta = None
+        self.normalize_forward = normalize_forward
 
         if mic_positions is None:
             self.mic_positions = pra.linear_2D_array(
@@ -86,7 +88,9 @@ class Beamformer:
             self.doa.locate_sources(X_stft)
             if self.doa.azimuth_recon is not None:
                 theta = self.doa.azimuth_recon[0]
-                theta = self.normalize_theta(theta)
+                if self.normalize_forward:
+                    theta = self.normalize_theta(theta)
+
                 if steer is None:
                     self.steer(theta)
 

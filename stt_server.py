@@ -2,30 +2,35 @@ import asyncio
 import json
 import queue
 import threading
-import sys
 import sounddevice as sd
 import numpy as np
-from websockets.asyncio.server import serve, broadcast
+from argparse import ArgumentParser
+from websockets.asyncio.server import ServerConnection, serve
 from vosk import Model, KaldiRecognizer
 
 from beamformer import Beamformer
 
 
 class SttServer:
-    # MODEL_PATH = "vosk-model-ru-0.42"
     MODEL_PATH = "vosk-model-small-ru-0.22"
     SAMPLE_RATE = 16000
     CHANNELS = 4
     BLOCK_DURATION = 0.5
 
-    def __init__(self):
+    def __init__(self, model_path=None, device=None, token='changeme'):
         self.bf = Beamformer(fs=self.SAMPLE_RATE)
-        self.model = Model(self.MODEL_PATH)
+
+        self.device = device if device is not None else "default"
+        self.token = token
+
+        model_path = model_path if model_path is not None else self.MODEL_PATH
+        self.model = Model(model_path)
         self.recognizer = KaldiRecognizer(self.model, self.SAMPLE_RATE)
         self.recognizer.SetWords(True)
 
         self.audio_queue = queue.Queue()
         self.loop_ready = threading.Event()
+        self.ws_clients = []
 
     def audio_callback(self, indata, frames, time, status):
         if status:
@@ -58,21 +63,30 @@ class SttServer:
                         "theta": np.rad2deg(theta),
                     })
 
-    async def ws_handler(self, websocket):
+    async def ws_handler(self, websocket: ServerConnection):
         print("Client added!")
+        try:
+            token = await websocket.recv()
+            print(f"<<< Client connected")
 
-        name = await websocket.recv()
-        print(f"<<< {name}")
+            if token == self.token:
+                print(f"<<< Client authenticated")
+                self.ws_clients.append(websocket)
+                await websocket.wait_closed()
+                self.ws_clients.remove(websocket)
 
-        await websocket.wait_closed()
+            await websocket.close()
+        except Exception as e:
+            print(e)
 
     async def _broadcast(self, message):
         print(message)
         print("sending to clients")
 
         data = json.dumps(message)
-
-        await broadcast(self.server.connections, data)
+        for client in self.ws_clients:
+            client: ServerConnection
+            await client.send(data)
 
     def broadcast(self, message):
         asyncio.run_coroutine_threadsafe(
@@ -96,7 +110,7 @@ class SttServer:
     def main(self):
         print("🎤 Starting microphone...")
         stream = sd.InputStream(
-            device=sys.argv[1],
+            device=self.device,
             samplerate=self.SAMPLE_RATE,
             blocksize=int(self.BLOCK_DURATION * self.SAMPLE_RATE),
             channels=self.CHANNELS,
@@ -115,5 +129,16 @@ class SttServer:
 
 
 if __name__ == '__main__':
-    server = SttServer()
+    parser = ArgumentParser()
+    parser.add_argument('-m', '--model')
+    parser.add_argument('-d', '--device')
+    parser.add_argument('-t', '--token')
+
+    args = parser.parse_args()
+
+    server = SttServer(
+        model_path=args.model,
+        device=args.device,
+        token=args.token,
+    )
     server.main()
